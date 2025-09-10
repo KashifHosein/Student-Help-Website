@@ -103,3 +103,85 @@ function renderAuthStatus(user) {
   authWrap.appendChild(login);
   authWrap.appendChild(signup);
 }
+
+// Small resilient UI init: ensure nothing is blocking the page and wire core buttons
+(function initUI() {
+  // helper to safely query
+  const $safe = (s) => { try { return document.querySelector(s); } catch(e){ return null; } };
+
+  // 1) remove any accidental full-screen overlays that may block clicks
+  try {
+    // hide profile pop if left open
+    const pp = $safe('#profilePop'); if (pp) pp.style.display = 'none';
+    // close auth dialog if open
+    const ad = $safe('#authDialog'); if (ad && typeof ad.close === 'function') { try { ad.close(); } catch(e){} }
+    // ensure body accepts pointer events
+    document.body.style.pointerEvents = 'auto';
+  } catch (e) { /* ignore */ }
+
+  // 2) wire top nav tabs if not already wired
+  try {
+    $$('.tab').forEach(t => {
+      if (!t._wired) {
+        t.addEventListener('click', () => {
+          const p = t.dataset.goto;
+          if (typeof goto === 'function' && p) goto(p);
+        });
+        t._wired = true;
+      }
+    });
+  } catch(e){}
+
+  // 3) wire auth dialog submit (Sign Up / Log In)
+  try {
+    const authForm = $safe('#authForm');
+    const authTitle = $safe('#authTitle');
+    const authError = $safe('#authError');
+    const authEmail = $safe('#authEmail');
+    const authPass = $safe('#authPass');
+    const authDlg = $safe('#authDialog');
+
+    if (authForm && authTitle && authEmail && authPass) {
+      // ensure previous handler removed and add new
+      authForm.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        authError.textContent = '';
+        const mode = (authTitle.textContent || '').toLowerCase().includes('sign up') ? 'signup' : 'login';
+        const email = (authEmail.value || '').trim();
+        const pass = (authPass.value || '').trim();
+        if (!email || !pass) { authError.textContent = 'Provide email and password.'; return; }
+        if (!auth) { authError.textContent = 'Auth not available. Check firebase config.'; return; }
+
+        try {
+          if (mode === 'signup') {
+            await createUserWithEmailAndPassword(auth, email, pass);
+            if (authDlg && typeof authDlg.close === 'function') authDlg.close();
+          } else {
+            await signInWithEmailAndPassword(auth, email, pass);
+            if (authDlg && typeof authDlg.close === 'function') authDlg.close();
+          }
+        } catch (err) {
+          console.error('Auth failed', err);
+          authError.textContent = (err && err.message) ? err.message : 'Authentication failed.';
+        }
+      });
+
+      // cancel button behaviour already in HTML uses onclick, but ensure dialog closes on ESC
+      if (authDlg) {
+        authDlg.addEventListener('cancel', () => { if (authError) authError.textContent = ''; });
+      }
+    }
+  } catch(e){ console.warn('auth wiring failed', e); }
+
+  // 4) ensure other core buttons are wired (Enroll/unEnroll/back etc.) if their handlers exist
+  try {
+    const backTo1 = $safe('#backTo1'); if (backTo1 && !backTo1._wired) { backTo1.addEventListener('click', () => setStep(1)); backTo1._wired = true; }
+    const backTo2 = $safe('#backTo2'); if (backTo2 && !backTo2._wired) { backTo2.addEventListener('click', () => setStep(2)); backTo2._wired = true; }
+    const backTo3 = $safe('#backTo3'); if (backTo3 && !backTo3._wired) { backTo3.addEventListener('click', () => setStep(3)); backTo3._wired = true; }
+  } catch(e){}
+
+  // 5) safety: re-run small sanity after a short delay (covers deferred DOM builds)
+  setTimeout(() => {
+    try { document.body.style.pointerEvents = 'auto'; } catch(e){}
+  }, 250);
+})();
