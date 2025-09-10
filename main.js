@@ -42,7 +42,12 @@ if (auth) {
   $('#enrolledList').innerHTML = ''; $('#bookmarkedEvents').innerHTML = '';
 }
 
-// safe DOM helpers used early
+// --- small DOM helpers (must be available before auth handlers run) ---
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const escapeHtml = (str = '') => String(str).replace(/[&<>\"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#039;'}[m]));
+
+// --- safe DOM refs used by early auth handling ---
 const profileBox = document.getElementById('profileBox');
 
 // minimal fallback renderer so calls before full app init won't throw
@@ -51,7 +56,6 @@ function renderAuthStatus(user) {
   if (!authWrap) return;
   authWrap.innerHTML = '';
 
-  // if user is signed in show a simple profile button (full UI will replace this)
   if (user) {
     const btn = document.createElement('button');
     btn.className = 'btn';
@@ -73,7 +77,6 @@ function renderAuthStatus(user) {
     return;
   }
 
-  // signed-out view: simple Log In / Sign Up buttons
   const login = document.createElement('button');
   login.className = 'btn';
   login.textContent = 'Log In';
