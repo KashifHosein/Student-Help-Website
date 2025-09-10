@@ -14,3 +14,4 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();firebase_config.js
 firebase_config.js
+.vercel

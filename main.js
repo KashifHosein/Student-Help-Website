@@ -3,17 +3,16 @@
 // =========================
 // Firebase Imports
 // =========================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { 
-  getAuth, onAuthStateChanged, createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, signOut, updateProfile 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { firebaseConfig } from "/api/firebase-config.js";
+import { firebaseConfig } from '/api/firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-// =========================
-// Firebase Init
-// =========================
-initializeApp(firebaseConfig);
+// init firebase AFTER import
+if (!firebaseConfig || !firebaseConfig.projectId) {
+  console.error('firebaseConfig missing or incomplete. Check /api/firebase-config.js and Vercel env vars.');
+} else {
+  initializeApp(firebaseConfig);
+}
 const auth = getAuth();
 
 // =========================
